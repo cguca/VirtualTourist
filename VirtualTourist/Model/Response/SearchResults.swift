@@ -9,11 +9,11 @@ import Foundation
 
 // MARK: - Welcome
 struct SearchResults: Codable {
-    let photos: Photos
-    let stat: String
-    
-    enum CodingKeys: String, CodingKey {
-        case photos
-        case stat
-    }
+//    let photos: Photos
+//    let stat: String
+//    
+//    enum CodingKeys: String, CodingKey {
+//        case photos
+//        case stat
+//    }
 }

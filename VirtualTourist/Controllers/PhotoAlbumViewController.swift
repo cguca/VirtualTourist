@@ -17,7 +17,7 @@ class PhotoAlbumViewController: UIViewController {
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var collectionView: UICollectionView!
     
-    private let sectionInsets = UIEdgeInsets(top: 50.0, left: 20.0, bottom: 50.0, right: 20.0)
+    private let sectionInsets = UIEdgeInsets(top: 60.0, left: 30.0, bottom: 60.0, right: 30.0)
     private let itemsPerRow: CGFloat = 3
     
     var pin:Pin!
@@ -25,6 +25,7 @@ class PhotoAlbumViewController: UIViewController {
     var longitude:Double! 
     let latitudeDelta = 1.0
     let longitudeDelta = 1.0
+    var page:Int = 0
     
 //    var images: [Picture] = []
     var images: [FlickrPhoto] = []
@@ -67,7 +68,7 @@ class PhotoAlbumViewController: UIViewController {
 //                print("The pin has photos. Here's the count \(result.count)")
 //            } else {
 //                FlikrPhotoClient.getPhotosByLocation(latitude: latitude, longitude: longitude, completion: handleGetPhotosResponse(photos:error:))
-                FlikrPhotoClient.getPhotosByLocation2(latitude: latitude, longitude: longitude, completion: handleLocationPhotosResponse(response:error:))
+        FlikrPhotoClient.getPhotosByLocation2(page: page, latitude: latitude, longitude: longitude, completion: handleLocationPhotosResponse(response:error:))
 //            }
 //        } else {
 //            FlikrPhotoClient.getPhotosByLocation(latitude: latitude, longitude: longitude, completion: handleLocationPhotosResponse(photos:error:))
@@ -121,6 +122,19 @@ class PhotoAlbumViewController: UIViewController {
         DispatchQueue.main.async {
             self.collectionView.reloadData()
         }
+    }
+    
+    @IBAction func getNewCollection(_ sender: Any) {
+        /*
+         1. clear local data
+         2. remove from core data
+         3. get new page number
+         3. get new photos
+         5. update collection view
+         */
+        self.images = []
+        page = page + 1
+        getPhotos()
     }
 }
 
