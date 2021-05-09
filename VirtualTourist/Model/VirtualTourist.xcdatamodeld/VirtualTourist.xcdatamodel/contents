@@ -1,19 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="17709" systemVersion="19F101" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
-    <entity name="Picture" representedClassName="Picture" syncable="YES" codeGenerationType="class">
-        <attribute name="id" optional="YES" attributeType="String"/>
+    <entity name="Photo" representedClassName="Photo" syncable="YES" codeGenerationType="class">
         <attribute name="image" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
-        <attribute name="secret" optional="YES" attributeType="String"/>
-        <attribute name="server" optional="YES" attributeType="String"/>
-        <relationship name="pin" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pin" inverseName="picture" inverseEntity="Pin"/>
+        <relationship name="pin" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pin" inverseName="photo" inverseEntity="Pin"/>
     </entity>
     <entity name="Pin" representedClassName="Pin" syncable="YES" codeGenerationType="class">
         <attribute name="latitude" optional="YES" attributeType="String"/>
         <attribute name="longitude" optional="YES" attributeType="String"/>
-        <relationship name="picture" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Picture" inverseName="pin" inverseEntity="Picture"/>
+        <relationship name="photo" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="pin" inverseEntity="Photo"/>
     </entity>
     <elements>
-        <element name="Picture" positionX="204.875" positionY="-5.9453125" width="165.16796875" height="118"/>
-        <element name="Pin" positionX="-67.9375" positionY="-20.67578125" width="205.62109375" height="88"/>
+        <element name="Pin" positionX="-215.35546875" positionY="-228.46484375" width="205.62109375" height="88"/>
+        <element name="Photo" positionX="106.484375" positionY="-212.7109375" width="128" height="73"/>
     </elements>
 </model>

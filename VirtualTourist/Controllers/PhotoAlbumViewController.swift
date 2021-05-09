@@ -60,6 +60,20 @@ class PhotoAlbumViewController: UIViewController {
     
     
     fileprivate func getPhotos() {
+//        print("Here is the number of saved pictures \(String(describing: pin.photo?.count))")
+        let fetchRequest: NSFetchRequest<Photo> = Photo.fetchRequest()
+        let predicate = NSPredicate(format: "pin == %@", pin)
+        fetchRequest.predicate = predicate
+        if let result = try? viewContext.fetch(fetchRequest) {
+            // results are pin locations
+            if result.count > 0 {
+                images = PhotoAdapter.adapt(photos: result)
+                print("The photos are saved so no call to the API \(result.count)")
+                return
+            }
+        }
+        
+        
 //        let fetchRequest: NSFetchRequest<Picture> = Picture.fetchRequest()
 //        let predicate = NSPredicate(format: "pin == %@", pin)
 //        fetchRequest.predicate = predicate
@@ -69,10 +83,7 @@ class PhotoAlbumViewController: UIViewController {
 //            } else {
 //                FlikrPhotoClient.getPhotosByLocation(latitude: latitude, longitude: longitude, completion: handleGetPhotosResponse(photos:error:))
         FlikrPhotoClient.getPhotosByLocation2(page: page, latitude: latitude, longitude: longitude, completion: handleLocationPhotosResponse(response:error:))
-//            }
-//        } else {
-//            FlikrPhotoClient.getPhotosByLocation(latitude: latitude, longitude: longitude, completion: handleLocationPhotosResponse(photos:error:))
-//        }
+
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -95,7 +106,7 @@ class PhotoAlbumViewController: UIViewController {
     
     func handleLocationPhotosResponse(response:FlickrPhotosData?, error:Error?) {
         if let response = response {
-            print("Here is the number of images \(String(describing: response.total))")
+            
             
             handleGetPhotosResponse(photos: FlikrPhotoClient.getPhotos2(photoData: response.photo), error: error)
         } else {
@@ -133,6 +144,33 @@ class PhotoAlbumViewController: UIViewController {
          5. update collection view
          */
         self.images = []
+//        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
+        let fetchRequest: NSFetchRequest<Photo> = Photo.fetchRequest()
+        let predicate = NSPredicate(format: "pin == %@", pin)
+        fetchRequest.predicate = predicate
+        
+        if let result = try? viewContext.fetch(fetchRequest) {
+            result.forEach { photo in
+                viewContext.delete(photo as NSManagedObject)
+            }
+            try? viewContext.save()
+        }
+        
+//        let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+//        batchDeleteRequest.resultType = .resultTypeCount
+//
+//        do {
+//            let result = try viewContext.execute(batchDeleteRequest) as? NSBatchDeleteResult
+//            guard let objectIDs = result?.result as? [NSManagedObjectID] else { return }
+//            print("The number of objects to delete are \(objectIDs.count)")
+//            let changes = [NSDeletedObjectsKey: objectIDs]
+//            NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [viewContext])
+//
+//        } catch {
+//            fatalError("Failed to execute request: \(error)")
+//        }
+        
+
         page = page + 1
         getPhotos()
     }
@@ -154,6 +192,7 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
         
         if let url = flickrPhoto.flickrImageURL() {
             loadImage(url: url) { (image) -> Void in
+//                self.saveNewImage(image: image)
                 cell.imageView.image = image
             }
         }
@@ -171,9 +210,25 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
             if let imgData = try? Data(contentsOf: url), let img = UIImage(data: imgData) {
                 // run the completion block
                 // always in the main queue, just in case!
+                
                 DispatchQueue.main.async(execute: { () -> Void in
+                    self.saveNewImage(imageData: imgData)
                     handler(img)
                 })
+            }
+        }
+    }
+    
+    func saveNewImage(imageData: Data?) {
+        if let imgData = imageData {
+            let photo = Photo(context: viewContext)
+            photo.image = imgData
+            photo.pin = pin
+            do {
+                try viewContext.save()
+                print("Saving image")
+            }  catch {
+//                print(error)
             }
         }
     }

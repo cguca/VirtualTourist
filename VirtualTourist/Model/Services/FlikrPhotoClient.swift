@@ -33,7 +33,7 @@ class FlikrPhotoClient {
         in
             if let response = response {
                 let photoData = response.photos
-                print("##### \(photoData.total)")
+//                print("##### \(photoData.total)")
                 completion(photoData, nil)
             } else {
 //                print(error!)
