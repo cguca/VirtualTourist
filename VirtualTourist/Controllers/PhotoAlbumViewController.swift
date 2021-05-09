@@ -134,11 +134,15 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "FlickrImageCell", for: indexPath) as! FlickrImageCell
         
         let flickrPhoto = self.images[(indexPath as NSIndexPath).row]
+        
         let image = flickrPhoto.thumbnail!
-        // Set the name and image
         cell.imageView.image = image
-        //cell.villainImageView?.image = UIImage(named: villain.imageName)
-        //cell.schemeLabel.text = "Scheme: \(villain.evilScheme)"
+        
+        if let url = flickrPhoto.flickrImageURL() {
+            loadImage(url: url) { (image) -> Void in
+                cell.imageView.image = image
+            }
+        }
         
         return cell
     }
@@ -146,6 +150,18 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         images.remove(at: indexPath.item)
         self.collectionView.deleteItems(at: [indexPath])
+    }
+    
+    func loadImage(url: URL, completionHandler handler: @escaping (_ image: UIImage) -> Void) {
+        DispatchQueue.global(qos: .userInitiated).async { () -> Void in
+            if let imgData = try? Data(contentsOf: url), let img = UIImage(data: imgData) {
+                // run the completion block
+                // always in the main queue, just in case!
+                DispatchQueue.main.async(execute: { () -> Void in
+                    handler(img)
+                })
+            }
+        }
     }
 }
 
