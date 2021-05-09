@@ -18,7 +18,7 @@ class FlikrPhotoClient {
         var stringValue: String {
             switch self {
             case .getLocationImages(let latitude, let longitude ):
-                return Endpoints.base + "?method=flickr.photos.search&api_key=de0960031f25d3a721ba56739a2f7a5c&lat=\(latitude)&lon=\(longitude)&page=0&per_page=20&format=json&nojsoncallback=1"
+                return Endpoints.base + "?method=flickr.photos.search&api_key=de0960031f25d3a721ba56739a2f7a5c&lat=\(latitude)&lon=\(longitude)&page=0&per_page=100&format=json&nojsoncallback=1"
             }
         }
         
@@ -27,15 +27,33 @@ class FlikrPhotoClient {
         }
     }
     
+    //
+    class func getPhotosByLocation2(latitude: Double, longitude: Double, completion: @escaping (FlickrPhotosData?, Error?) -> Void) {
+        taskForGETRequest(url: Endpoints.getLocationImages(String(format: "%.4f",latitude), String(format: "%.4f", longitude)).url, response: FlickrPhotoSearchResults.self) { (response, error)
+        in
+            if let response = response {
+                let photoData = response.photos
+                print("##### \(photoData.total)")
+                completion(photoData, nil)
+            } else {
+//                print(error!)
+                completion(nil, error)
+            }
+        }
+    }
+    //
+    
     class func getPhotosByLocation(latitude: Double, longitude: Double, completion: @escaping ([FlickrPhoto], Error?) -> Void) {
         taskForGETRequest(url: Endpoints.getLocationImages(String(format: "%.4f",latitude), String(format: "%.4f", longitude)).url, response: FlickrPhotoSearchResults.self) { (response, error)
         in
             if let response = response {
+                let photoData = response.photos
+                print("##### \(photoData.total)")
                 let flickrPhotoData = response.photos.photo
                 let flickrPhotos = self.getPhotos(photoData: flickrPhotoData)
                 completion(flickrPhotos, nil)
             } else {
-                print(error!)
+//                print(error!)
                 completion([], error)
             }
         }
@@ -71,8 +89,28 @@ class FlikrPhotoClient {
       return photos
     }
     
+    ///
+    class func getPhotos2(photoData: [FlickrPhotoData]) -> [FlickrPhoto] {
+     let photos: [FlickrPhoto] = photoData.compactMap { photoObject in
+       guard
+           let photoID = photoObject.id as String?,
+           let farm = photoObject.farm as Int?,
+           let server = photoObject.server as String?,
+           let secret = photoObject.secret as String?
+       else {
+         return nil
+       }
+
+       var flickrPhoto = FlickrPhoto(photoID: photoID, farm: farm, server: server, secret: secret)
+        flickrPhoto.thumbnail = UIImage(named: "placeholder")
+        return flickrPhoto
+     }
+     return photos
+   }
+    ///
+    
     private class func taskForGETRequest<ResponseType: Decodable>(url: URL, response: ResponseType.Type, completion: @escaping (ResponseType?, Error?)->Void){
-        print(url.absoluteURL)
+//        print(url.absoluteURL)
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
             guard let data = data else {
                 DispatchQueue.main.async {

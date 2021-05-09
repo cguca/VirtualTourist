@@ -71,7 +71,7 @@ class TravelLocationsMapViewController: UIViewController {
         let pin = Pin(context: viewContext)
         pin.longitude = String(format: "%.4f", longitude)
         pin.latitude = String(format: "%.4f", latitude)
-        print("When adding pin latitude:\(String(describing: pin.latitude)) longitude\(String(describing: pin.longitude))")
+//        print("When adding pin latitude:\(String(describing: pin.latitude)) longitude\(String(describing: pin.longitude))")
 //        try? dataController.viewContext.save()
         do {
             try viewContext.save()
@@ -89,7 +89,7 @@ class TravelLocationsMapViewController: UIViewController {
           
             let coordinate = CLLocationCoordinate2D(latitude: lat, longitude: long)
             let annotation = MKPointAnnotation()
-            print("Retreiving pin latitude:\(lat) longitude\(long)")
+//            print("Retreiving pin latitude:\(lat) longitude\(long)")
             annotation.coordinate = coordinate
             annotations.append(annotation)
         }
@@ -133,8 +133,8 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
 //        fetchRequest.predicate = predicate
         
         if let result = try? viewContext.fetch(fetchRequest){
-            print("Lat: \(String(describing: latitude)) Lon: \(String(describing: longitude))")
-            print("Here is the pin \(result)")
+//            print("Lat: \(String(describing: latitude)) Lon: \(String(describing: longitude))")
+//            print("Here is the pin \(result)")
             photoAlbumVC.pin = result.first
         } else {
             print("I cannot find the pin")

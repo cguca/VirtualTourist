@@ -17,6 +17,9 @@ class PhotoAlbumViewController: UIViewController {
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var collectionView: UICollectionView!
     
+    private let sectionInsets = UIEdgeInsets(top: 50.0, left: 20.0, bottom: 50.0, right: 20.0)
+    private let itemsPerRow: CGFloat = 3
+    
     var pin:Pin!
     var latitude:Double!
     var longitude:Double! 
@@ -63,7 +66,8 @@ class PhotoAlbumViewController: UIViewController {
 //            if result.count > 0 {
 //                print("The pin has photos. Here's the count \(result.count)")
 //            } else {
-                FlikrPhotoClient.getPhotosByLocation(latitude: latitude, longitude: longitude, completion: handleLocationPhotosResponse(photos:error:))
+//                FlikrPhotoClient.getPhotosByLocation(latitude: latitude, longitude: longitude, completion: handleGetPhotosResponse(photos:error:))
+                FlikrPhotoClient.getPhotosByLocation2(latitude: latitude, longitude: longitude, completion: handleLocationPhotosResponse(response:error:))
 //            }
 //        } else {
 //            FlikrPhotoClient.getPhotosByLocation(latitude: latitude, longitude: longitude, completion: handleLocationPhotosResponse(photos:error:))
@@ -88,9 +92,19 @@ class PhotoAlbumViewController: UIViewController {
         }
     }
     
+    func handleLocationPhotosResponse(response:FlickrPhotosData?, error:Error?) {
+        if let response = response {
+            print("Here is the number of images \(String(describing: response.total))")
+            
+            handleGetPhotosResponse(photos: FlikrPhotoClient.getPhotos2(photoData: response.photo), error: error)
+        } else {
+            print("There is an error")
+        }
+    }
+    
     // Utility function to convert Flickr response data to core data object
     // persist
-    func handleLocationPhotosResponse(photos:[FlickrPhoto], error:Error?){
+    func handleGetPhotosResponse(photos:[FlickrPhoto], error:Error?){
         
 //        for photo in photos{
 //            print("Saving picture with id \(photo.id)")
@@ -133,4 +147,39 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
         images.remove(at: indexPath.item)
         self.collectionView.deleteItems(at: [indexPath])
     }
+}
+
+extension PhotoAlbumViewController: UICollectionViewDelegateFlowLayout {
+  // 1
+  func collectionView(
+    _ collectionView: UICollectionView,
+    layout collectionViewLayout: UICollectionViewLayout,
+    sizeForItemAt indexPath: IndexPath
+  ) -> CGSize {
+    // 2
+    let paddingSpace = sectionInsets.left * (itemsPerRow + 1)
+    let availableWidth = view.frame.width - paddingSpace
+    let widthPerItem = availableWidth / itemsPerRow
+
+    return CGSize(width: widthPerItem, height: widthPerItem)
+  }
+
+  // 3
+  func collectionView(
+    _ collectionView: UICollectionView,
+    layout collectionViewLayout: UICollectionViewLayout,
+    insetForSectionAt section: Int
+  ) -> UIEdgeInsets {
+    return sectionInsets
+  }
+
+  // 4
+  func collectionView(
+    _ collectionView: UICollectionView,
+    layout collectionViewLayout: UICollectionViewLayout,
+    minimumLineSpacingForSectionAt section: Int
+  ) -> CGFloat {
+    return sectionInsets.left
+  }
+
 }
