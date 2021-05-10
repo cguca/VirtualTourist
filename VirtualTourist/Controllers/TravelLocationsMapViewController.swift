@@ -144,4 +144,23 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
         photoAlbumVC.longitude = view.annotation?.coordinate.longitude
         self.navigationController?.pushViewController(photoAlbumVC, animated: true)
     }
+    
+    func mapViewWillStartRenderingMap(_ mapView: MKMapView) {
+        print("Will start rendering map")
+    }
+    func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+        print("@@@@@@@@@@ Did scroll")
+    }
+    
+    func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
+        print("%%%%%%%%%% Will scroll")
+    }
+    
+    func mapViewDidFinishLoadingMap(_ mapView: MKMapView) {
+        print("******** Finish loading")
+    }
+    
+    func mapViewDidChangeVisibleRegion(_ mapView: MKMapView) {
+        print("Changed Visible Region")
+    }
 }

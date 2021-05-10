@@ -16,6 +16,8 @@ class PhotoAlbumViewController: UIViewController {
     
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var collectionView: UICollectionView!
+    @IBOutlet weak var messageLabel: UILabel!
+    @IBOutlet weak var newCollectionButton: UIButton!
     
     private let sectionInsets = UIEdgeInsets(top: 60.0, left: 30.0, bottom: 60.0, right: 30.0)
     private let itemsPerRow: CGFloat = 3
@@ -27,11 +29,12 @@ class PhotoAlbumViewController: UIViewController {
     let longitudeDelta = 1.0
     var page:Int = 0
     
-//    var images: [Picture] = []
     var images: [FlickrPhoto] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        messageLabel.isHidden = true
+        newCollectionButton.isEnabled = false
         collectionView.delegate = self
         collectionView.dataSource = self
         
@@ -61,6 +64,7 @@ class PhotoAlbumViewController: UIViewController {
     
     fileprivate func getPhotos() {
 //        print("Here is the number of saved pictures \(String(describing: pin.photo?.count))")
+        
         let fetchRequest: NSFetchRequest<Photo> = Photo.fetchRequest()
         let predicate = NSPredicate(format: "pin == %@", pin)
         fetchRequest.predicate = predicate
@@ -69,35 +73,19 @@ class PhotoAlbumViewController: UIViewController {
             if result.count > 0 {
                 images = PhotoAdapter.adapt(photos: result)
                 print("The photos are saved so no call to the API \(result.count)")
+                newCollectionButton.isEnabled = true
                 return
             }
         }
         
-        
-//        let fetchRequest: NSFetchRequest<Picture> = Picture.fetchRequest()
-//        let predicate = NSPredicate(format: "pin == %@", pin)
-//        fetchRequest.predicate = predicate
-//        if  let result = try? viewContext.fetch(fetchRequest) {
-//            if result.count > 0 {
-//                print("The pin has photos. Here's the count \(result.count)")
-//            } else {
-//                FlikrPhotoClient.getPhotosByLocation(latitude: latitude, longitude: longitude, completion: handleGetPhotosResponse(photos:error:))
         FlikrPhotoClient.getPhotosByLocation2(page: page, latitude: latitude, longitude: longitude, completion: handleLocationPhotosResponse(response:error:))
-
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-//        if let storedPictures = pin?.picture {
-//            print("**** Count of pictures stored \(storedPictures.count)")
-//            for pic in storedPictures {
-//                print("**** pic with id \((pic) as! Picture).id)")
-//                images.append(pic as! Picture)
-//            }
-//        } else {
-            getPhotos()
-//        }
+        getPhotos()
+
         getLocation()
         DispatchQueue.main.async {
             self.collectionView?.reloadData()
@@ -106,8 +94,6 @@ class PhotoAlbumViewController: UIViewController {
     
     func handleLocationPhotosResponse(response:FlickrPhotosData?, error:Error?) {
         if let response = response {
-            
-            
             handleGetPhotosResponse(photos: FlikrPhotoClient.getPhotos2(photoData: response.photo), error: error)
         } else {
             print("There is an error")
@@ -117,21 +103,13 @@ class PhotoAlbumViewController: UIViewController {
     // Utility function to convert Flickr response data to core data object
     // persist
     func handleGetPhotosResponse(photos:[FlickrPhoto], error:Error?){
-        
-//        for photo in photos{
-//            print("Saving picture with id \(photo.id)")
-//            let picture = Picture(context: viewContext)
-//            picture.id = photo.id
-//            picture.secret = photo.secret
-//            picture.server = photo.server
-//            picture.pin = pin
-//            
-//            try? viewContext.save()
-//            images.append(picture)
-//        }
-        images = photos
-        DispatchQueue.main.async {
-            self.collectionView.reloadData()
+        if photos.count > 0 {
+            images = photos
+            DispatchQueue.main.async {
+                self.collectionView.reloadData()
+            }
+        } else {
+            messageLabel.isHidden = false
         }
     }
     
@@ -172,6 +150,7 @@ class PhotoAlbumViewController: UIViewController {
         
 
         page = page + 1
+        newCollectionButton.isEnabled = false
         getPhotos()
     }
 }
@@ -183,6 +162,7 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+       
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "FlickrImageCell", for: indexPath) as! FlickrImageCell
         
         let flickrPhoto = self.images[(indexPath as NSIndexPath).row]
@@ -195,6 +175,10 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
 //                self.saveNewImage(image: image)
                 cell.imageView.image = image
             }
+        }
+        
+        if (indexPath.row == images.count - 1 ) { //it's your last cell
+            newCollectionButton.isEnabled = true
         }
         
         return cell
