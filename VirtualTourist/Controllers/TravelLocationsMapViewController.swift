@@ -35,7 +35,7 @@ class TravelLocationsMapViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-        if UserDefaults.standard.bool(forKey: "locationsaved")  {
+//        if UserDefaults.standard.bool(forKey: "locationsaved")  {
             let latitude = UserDefaults.standard.double(forKey: "latitude")
             let longitude = UserDefaults.standard.double(forKey: "longitude")
             let latitudeDelta = UserDefaults.standard.double(forKey: "latitudeDelta")
@@ -48,7 +48,7 @@ class TravelLocationsMapViewController: UIViewController {
             DispatchQueue.main.async {
                 self.mapView.region = region
             }
-        }
+        
     }
         
     override func viewDidDisappear(_ animated: Bool) {
@@ -145,22 +145,25 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
         self.navigationController?.pushViewController(photoAlbumVC, animated: true)
     }
     
-    func mapViewWillStartRenderingMap(_ mapView: MKMapView) {
-        print("Will start rendering map")
-    }
+
     func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-        print("@@@@@@@@@@ Did scroll")
+        print("regionDidChangeAnimated")
+        let region = mapView.region
+        let center = region.center
+        let latitude = center.latitude
+        let longitude = center.longitude
+        
+        let span = region.span
+        let latitudeDelta = span.latitudeDelta
+        let longitudeDelta = span.longitudeDelta
+        
+        UserDefaults.standard.set(latitude, forKey: "latitude")
+        UserDefaults.standard.set(longitude, forKey: "longitude")
+        UserDefaults.standard.set(latitudeDelta, forKey: "latitudeDelta")
+        UserDefaults.standard.set(longitudeDelta, forKey: "longitudeDelta")
+        
+        print(latitude, longitude, latitudeDelta, longitudeDelta)
     }
     
-    func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
-        print("%%%%%%%%%% Will scroll")
-    }
-    
-    func mapViewDidFinishLoadingMap(_ mapView: MKMapView) {
-        print("******** Finish loading")
-    }
-    
-    func mapViewDidChangeVisibleRegion(_ mapView: MKMapView) {
-        print("Changed Visible Region")
-    }
+
 }
