@@ -50,19 +50,15 @@ class PhotoAlbumViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
-//        latitude = CLLocationDegrees(pin.latitude!)
-//        longitude = CLLocationDegrees(pin.longitude!)
-        
-        getPhotos()
-
-        getLocation()
+                
+        loadAndDisplayPhotoAlbum()
+        setLocationOnMap()
         DispatchQueue.main.async {
             self.collectionView?.reloadData()
         }
     }
     
-    fileprivate func  getLocation() {
+    private func  setLocationOnMap() {
         let span = MKCoordinateSpan(latitudeDelta: latitudeDelta, longitudeDelta: longitudeDelta)
         
         let lat = CLLocationDegrees(latitude)
@@ -81,52 +77,45 @@ class PhotoAlbumViewController: UIViewController {
     }
     
     
-    fileprivate func getPhotos() {
-//        print("Here is the number of saved pictures \(String(describing: pin.photo?.count))")
-        
+    private func loadAndDisplayPhotoAlbum() {
         let fetchRequest: NSFetchRequest<Photo> = Photo.fetchRequest()
         let predicate = NSPredicate(format: "pin == %@", pin)
         fetchRequest.predicate = predicate
         if let result = try? viewContext.fetch(fetchRequest) {
-            // results are pin locations
             if result.count > 0 {
                 images = PhotoAdapter.adapt(photos: result)
-                print("The photos are saved so no call to the API \(result.count)")
                 newCollectionButton.isEnabled = true
                 return
             }
         }
-        
-        FlikrPhotoClient.getPhotosByLocation2(page: page, latitude: latitude, longitude: longitude, completion: handleLocationPhotosResponse(response:error:))
+        FlikrPhotoClient.searchForPhotosByLocation(page: page, latitude: latitude, longitude: longitude, completion: handleSearchPhotosResponse(response:error:))
     }
     
     
-    
-    func handleLocationPhotosResponse(response:FlickrPhotosData?, error:Error?) {
+    // Mark - Handlers
+    func handleSearchPhotosResponse(response:FlickrPhotosData?, error:Error?) {
         if let response = response {
             page = response.page
             totalPages = response.pages
-            // Instead of pass just data, pass whole data
-            handleGetPhotosResponse(photos: FlikrPhotoClient.getPhotos2(photoData: response.photo), error: error)
+            handleGetPhotosResponse(photos: PhotoAdapter.adapt(photoData: response.photo), error: error)
         } else {
-            print("There is an error getting the flickr location handler \(error)")
+            print("There is an error getting the flickr location handler \(String(describing: error?.localizedDescription))")
         }
     }
     
-    // Utility function to convert Flickr response data to core data object
-    // persist
+
     func handleGetPhotosResponse(photos:[FlickrPhoto], error:Error?){
         if photos.count > 0 {
             images = photos
-            DispatchQueue.main.async {
-                self.collectionView.reloadData()
-            }
         } else {
             messageLabel.isHidden = false
         }
+        DispatchQueue.main.async {
+            self.collectionView.reloadData()
+        }
     }
     
-    /// Mark Core Data
+    // Mark Core Data
     func deletePhoto(photoID: String) {
         let fetchRequest: NSFetchRequest<Photo> = Photo.fetchRequest()
         let predicate = NSPredicate(format: "photoID == %@", photoID)
@@ -139,17 +128,23 @@ class PhotoAlbumViewController: UIViewController {
         }
     }
     
-    /// Mark IBActions
+    func saveNewImage(photoID: String, imageData: Data?) {
+        if let imgData = imageData {
+            let photo = Photo(context: viewContext)
+            photo.image = imgData
+            photo.pin = pin
+            photo.photoID = photoID
+            do {
+                try viewContext.save()
+            }  catch {
+                print("There was an error while saving the image to core data: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    //Mark - IBActions
     @IBAction func getNewCollection(_ sender: Any) {
-        /*
-         1. clear local data
-         2. remove from core data
-         3. get new page number
-         3. get new photos
-         5. update collection view
-         */
         self.images = []
-//        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
         let fetchRequest: NSFetchRequest<Photo> = Photo.fetchRequest()
         let predicate = NSPredicate(format: "pin == %@", pin)
         fetchRequest.predicate = predicate
@@ -160,30 +155,14 @@ class PhotoAlbumViewController: UIViewController {
             }
             try? viewContext.save()
         }
-        
-//        let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-//        batchDeleteRequest.resultType = .resultTypeCount
-//
-//        do {
-//            let result = try viewContext.execute(batchDeleteRequest) as? NSBatchDeleteResult
-//            guard let objectIDs = result?.result as? [NSManagedObjectID] else { return }
-//            print("The number of objects to delete are \(objectIDs.count)")
-//            let changes = [NSDeletedObjectsKey: objectIDs]
-//            NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [viewContext])
-//
-//        } catch {
-//            fatalError("Failed to execute request: \(error)")
-//        }
-        
-
+ 
         page = page + 1
         newCollectionButton.isEnabled = false
-        getPhotos()
+        loadAndDisplayPhotoAlbum()
     }
-    
-    
 }
 
+// Mark - UICollectionViewDelegate and UICollectionViewDataSource
 extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -195,40 +174,20 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "FlickrImageCell", for: indexPath) as! FlickrImageCell
         
         let flickrPhoto = self.images[(indexPath as NSIndexPath).row]
-        
-        //*** move this after the call
-//        let image = flickrPhoto.thumbnail!
-//        cell.imageView.image = image
-//        cell.photoID = flickrPhoto.photoID
-        
-//        if let url = flickrPhoto.flickrImageURL() {
-//            print("Here's the url: \(url)")
-//            // ***** pass the entire flickrPhoto object
-//            loadImage(photoID: flickrPhoto.photoID, url: url) { (image) -> Void in
-////                self.saveNewImage(image: image)
-//                cell.imageView.image = image
-//            }
-//        }
-        
-//        cell.imageView.image = UIImage(named: "placeholder")
+        cell.photoID = flickrPhoto.photoID
         if let image = flickrPhoto.thumbnail {
             cell.imageView.image = image
         } else {
             cell.imageView.image = UIImage(named: "placeholder")
             if let url = flickrPhoto.flickrImageURL() {
-                print("Here's the url: \(url)")
-                // ***** pass the entire flickrPhoto object
                 loadImage(photoID: flickrPhoto.photoID, url: url) { (image) -> Void in
-    //                self.saveNewImage(image: image)
                     cell.imageView.image = image
                 }
             }
         }
-//        cell.imageView.image = flickrPhoto.thumbnail
         
-        cell.photoID = flickrPhoto.photoID
-        
-        if (indexPath.row == images.count - 1 ) { //it's your last cell
+        // All images downloaded, enable button
+        if (indexPath.row == images.count - 1 ) {
             newCollectionButton.isEnabled = true
         }
         
@@ -236,7 +195,6 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        
         let flickrPhoto = self.images[(indexPath as NSIndexPath).row]
         self.deletePhoto(photoID: flickrPhoto.photoID)
         images.remove(at: indexPath.item)
@@ -246,34 +204,17 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
     func loadImage(photoID: String, url: URL, completionHandler handler: @escaping (_ image: UIImage) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async { () -> Void in
             if let imgData = try? Data(contentsOf: url), let img = UIImage(data: imgData) {
-                // run the completion block
-                // always in the main queue, just in case!
-                
                 DispatchQueue.main.async(execute: { () -> Void in
-                    //**** pass entire flickrPhoto
                     self.saveNewImage(photoID: photoID, imageData: imgData)
                     handler(img)
                 })
             }
         }
     }
-    
-    func saveNewImage(photoID: String, imageData: Data?) {
-        if let imgData = imageData {
-            let photo = Photo(context: viewContext)
-            photo.image = imgData
-            photo.pin = pin
-            photo.photoID = photoID
-            do {
-                try viewContext.save()
-                print("Saving image")
-            }  catch {
-//                print(error)
-            }
-        }
-    }
 }
 
+
+// Mark - UICollectionViewDelegateFlowLayout
 extension PhotoAlbumViewController: UICollectionViewDelegateFlowLayout {
 
   func collectionView( _ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {

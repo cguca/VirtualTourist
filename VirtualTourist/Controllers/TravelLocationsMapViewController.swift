@@ -25,10 +25,6 @@ class TravelLocationsMapViewController: UIViewController {
         }
     }
     
-//    override func viewDidDisappear(_ animated: Bool) {
-//        super.viewDidDisappear(animated)
-//    }
-//
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
@@ -48,16 +44,23 @@ class TravelLocationsMapViewController: UIViewController {
         }
     }
         
-
+    /*
+     Populated the map with saved pins
+     */
+    func populateMap(locations:[Pin]) {
+        var annotations = [MKPointAnnotation]()
+        for location in locations {
+            let lat = CLLocationDegrees(Double(location.latitude!)!)
+            let long = CLLocationDegrees(Double(location.longitude!)!)
+          
+            let coordinate = CLLocationCoordinate2D(latitude: lat, longitude: long)
+            let annotation = MKPointAnnotation()
+            annotation.coordinate = coordinate
+            annotations.append(annotation)
+        }
         
-    @IBAction func didTouchLong(_ sender: UILongPressGestureRecognizer) {
-        let location = sender.location(in: self.mapView)
-        let pinCoordinate =  self.mapView.convert(location, toCoordinateFrom: self.mapView)
-        let pin = MKPointAnnotation()
-        pin.coordinate = pinCoordinate
-        savePin(longitude: pinCoordinate.longitude, latitude: pinCoordinate.latitude)
         DispatchQueue.main.async {
-            self.mapView.addAnnotation(pin)
+            self.mapView.addAnnotations(annotations)
         }
     }
     
@@ -75,28 +78,22 @@ class TravelLocationsMapViewController: UIViewController {
         }
     }
     
-    func populateMap(locations:[Pin]) {
-        
-        var annotations = [MKPointAnnotation]()
-        for location in locations {
-            let lat = CLLocationDegrees(Double(location.latitude!)!)
-            let long = CLLocationDegrees(Double(location.longitude!)!)
-          
-            let coordinate = CLLocationCoordinate2D(latitude: lat, longitude: long)
-            let annotation = MKPointAnnotation()
-            annotation.coordinate = coordinate
-            annotations.append(annotation)
-        }
-        
+    // Mark - IBActions
+    @IBAction func didTouchLong(_ sender: UILongPressGestureRecognizer) {
+        let location = sender.location(in: self.mapView)
+        let pinCoordinate =  self.mapView.convert(location, toCoordinateFrom: self.mapView)
+        let pin = MKPointAnnotation()
+        pin.coordinate = pinCoordinate
+        savePin(longitude: pinCoordinate.longitude, latitude: pinCoordinate.latitude)
         DispatchQueue.main.async {
-            self.mapView.addAnnotations(annotations)
+            self.mapView.addAnnotation(pin)
         }
     }
 }
 
 extension TravelLocationsMapViewController: MKMapViewDelegate {
     /*
-     
+     Determine the pin that was selected and navigate to photo album controller
      */
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView)
     {
@@ -106,10 +103,7 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
         let latitude = view.annotation?.coordinate.latitude
         let longitude = view.annotation?.coordinate.longitude
         let fetchRequest:NSFetchRequest<Pin> = Pin.fetchRequest()
-//
-//        let latitudePredicate = NSPredicate(format: "latitude == %@", String(format: "%.4f", latitude!))
-//        let longitudePredicate = NSPredicate(format: "longitude == %@", String(format: "%.4f", longitude!))
-        
+    
         let latitudePredicate = NSPredicate(format: "latitude == %@", String(latitude!))
         let longitudePredicate = NSPredicate(format: "longitude == %@", String(longitude!))
         
@@ -118,16 +112,11 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
         fetchRequest.predicate = andPredicate
         
         if let result = try? viewContext.fetch(fetchRequest){
-//            print("Lat: \(String(describing: latitude)) Lon: \(String(describing: longitude))")
-//            print("Here is the pin \(result)")
             photoAlbumVC.pin = result.first
         } else {
             print("I cannot find the pin")
         }
-        // Communicate the match
-//        photoAlbumVC.latitude = view.annotation?.coordinate.latitude
-//        photoAlbumVC.longitude = view.annotation?.coordinate.longitude
-        
+       
         self.navigationController?.pushViewController(photoAlbumVC, animated: true)
     }
     
@@ -139,16 +128,15 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
         let center = region.center
         let latitude = center.latitude
         let longitude = center.longitude
-        
+
         let span = region.span
         let latitudeDelta = span.latitudeDelta
         let longitudeDelta = span.longitudeDelta
-        
+
         UserDefaults.standard.set(latitude, forKey: "latitude")
         UserDefaults.standard.set(longitude, forKey: "longitude")
         UserDefaults.standard.set(latitudeDelta, forKey: "latitudeDelta")
         UserDefaults.standard.set(longitudeDelta, forKey: "longitudeDelta")
         UserDefaults.standard.set(longitudeDelta, forKey: "locationsaved")
-        print(latitude, longitude, latitudeDelta, longitudeDelta)
     }
 }
