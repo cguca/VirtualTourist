@@ -12,7 +12,7 @@ class PhotoAdapter {
     class func adapt(photos: [Photo]) -> [FlickrPhoto]{
         let photos: [FlickrPhoto] = photos.compactMap { photoObject in
           guard
-            let photoId = "" as String?,
+            let photoId = photoObject.photoID as String?,
               let farm = 0 as Int?,
               let server = "" as String?,
               let secret = "" as String?,

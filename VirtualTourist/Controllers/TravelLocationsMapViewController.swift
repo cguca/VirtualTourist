@@ -35,7 +35,7 @@ class TravelLocationsMapViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-//        if UserDefaults.standard.bool(forKey: "locationsaved")  {
+        if UserDefaults.standard.bool(forKey: "locationsaved")  {
             let latitude = UserDefaults.standard.double(forKey: "latitude")
             let longitude = UserDefaults.standard.double(forKey: "longitude")
             let latitudeDelta = UserDefaults.standard.double(forKey: "latitudeDelta")
@@ -48,7 +48,7 @@ class TravelLocationsMapViewController: UIViewController {
             DispatchQueue.main.async {
                 self.mapView.region = region
             }
-        
+        }
     }
         
     override func viewDidDisappear(_ animated: Bool) {
@@ -161,7 +161,7 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
         UserDefaults.standard.set(longitude, forKey: "longitude")
         UserDefaults.standard.set(latitudeDelta, forKey: "latitudeDelta")
         UserDefaults.standard.set(longitudeDelta, forKey: "longitudeDelta")
-        
+        UserDefaults.standard.set(longitudeDelta, forKey: "locationsaved")
         print(latitude, longitude, latitudeDelta, longitudeDelta)
     }
     

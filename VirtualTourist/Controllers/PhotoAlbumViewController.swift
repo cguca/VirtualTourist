@@ -28,6 +28,7 @@ class PhotoAlbumViewController: UIViewController {
     let latitudeDelta = 1.0
     let longitudeDelta = 1.0
     var page:Int = 0
+    var totalPages:Int = 0
     
     var images: [FlickrPhoto] = []
     
@@ -38,6 +39,17 @@ class PhotoAlbumViewController: UIViewController {
         collectionView.delegate = self
         collectionView.dataSource = self
         
+        DispatchQueue.main.async {
+            self.collectionView?.reloadData()
+        }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        getPhotos()
+
+        getLocation()
         DispatchQueue.main.async {
             self.collectionView?.reloadData()
         }
@@ -81,19 +93,13 @@ class PhotoAlbumViewController: UIViewController {
         FlikrPhotoClient.getPhotosByLocation2(page: page, latitude: latitude, longitude: longitude, completion: handleLocationPhotosResponse(response:error:))
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-
-        getPhotos()
-
-        getLocation()
-        DispatchQueue.main.async {
-            self.collectionView?.reloadData()
-        }
-    }
+    
     
     func handleLocationPhotosResponse(response:FlickrPhotosData?, error:Error?) {
         if let response = response {
+            page = response.page
+            totalPages = response.pages
+            // Instead of pass just data, pass whole data
             handleGetPhotosResponse(photos: FlikrPhotoClient.getPhotos2(photoData: response.photo), error: error)
         } else {
             print("There is an error")
@@ -113,6 +119,20 @@ class PhotoAlbumViewController: UIViewController {
         }
     }
     
+    /// Mark Core Data
+    func deletePhoto(photoID: String) {
+        let fetchRequest: NSFetchRequest<Photo> = Photo.fetchRequest()
+        let predicate = NSPredicate(format: "photoID == %@", photoID)
+        fetchRequest.predicate = predicate
+        if let result = try? viewContext.fetch(fetchRequest) {
+            result.forEach { photo in
+                viewContext.delete(photo)
+            }
+            try? viewContext.save()
+        }
+    }
+    
+    /// Mark IBActions
     @IBAction func getNewCollection(_ sender: Any) {
         /*
          1. clear local data
@@ -153,6 +173,8 @@ class PhotoAlbumViewController: UIViewController {
         newCollectionButton.isEnabled = false
         getPhotos()
     }
+    
+    
 }
 
 extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDataSource {
@@ -169,9 +191,10 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
         
         let image = flickrPhoto.thumbnail!
         cell.imageView.image = image
+        cell.photoID = flickrPhoto.photoID
         
         if let url = flickrPhoto.flickrImageURL() {
-            loadImage(url: url) { (image) -> Void in
+            loadImage(photoID: flickrPhoto.photoID, url: url) { (image) -> Void in
 //                self.saveNewImage(image: image)
                 cell.imageView.image = image
             }
@@ -185,29 +208,33 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        
+        let flickrPhoto = self.images[(indexPath as NSIndexPath).row]
+        self.deletePhoto(photoID: flickrPhoto.photoID)
         images.remove(at: indexPath.item)
         self.collectionView.deleteItems(at: [indexPath])
     }
     
-    func loadImage(url: URL, completionHandler handler: @escaping (_ image: UIImage) -> Void) {
+    func loadImage(photoID: String, url: URL, completionHandler handler: @escaping (_ image: UIImage) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async { () -> Void in
             if let imgData = try? Data(contentsOf: url), let img = UIImage(data: imgData) {
                 // run the completion block
                 // always in the main queue, just in case!
                 
                 DispatchQueue.main.async(execute: { () -> Void in
-                    self.saveNewImage(imageData: imgData)
+                    self.saveNewImage(photoID: photoID, imageData: imgData)
                     handler(img)
                 })
             }
         }
     }
     
-    func saveNewImage(imageData: Data?) {
+    func saveNewImage(photoID: String, imageData: Data?) {
         if let imgData = imageData {
             let photo = Photo(context: viewContext)
             photo.image = imgData
             photo.pin = pin
+            photo.photoID = photoID
             do {
                 try viewContext.save()
                 print("Saving image")
