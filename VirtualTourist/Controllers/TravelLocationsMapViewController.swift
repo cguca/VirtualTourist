@@ -14,24 +14,21 @@ class TravelLocationsMapViewController: UIViewController {
     let viewContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     @IBOutlet weak var mapView: MKMapView!
-        
-//    var dataController:DataController!
-//    let dataController = DataController(modelName: "VirtualTourist")
-    let saveMapLocationQueue = DispatchQueue(label: "maplocation", qos: .userInitiated)
-    
+            
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
         mapView.delegate = self
         
         let fetchRequest: NSFetchRequest<Pin> = Pin.fetchRequest()
-//        if let result = try? dataController.viewContext.fetch(fetchRequest){
         if let result = try? viewContext.fetch(fetchRequest){
-            // results are pin locations
-            handleLocations(locations: result)
+            populateMap(locations: result)
         }
     }
-        
+    
+//    override func viewDidDisappear(_ animated: Bool) {
+//        super.viewDidDisappear(animated)
+//    }
+//
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
@@ -51,36 +48,34 @@ class TravelLocationsMapViewController: UIViewController {
         }
     }
         
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-    }
+
         
     @IBAction func didTouchLong(_ sender: UILongPressGestureRecognizer) {
         let location = sender.location(in: self.mapView)
         let pinCoordinate =  self.mapView.convert(location, toCoordinateFrom: self.mapView)
         let pin = MKPointAnnotation()
         pin.coordinate = pinCoordinate
-        addPin(longitude: pinCoordinate.longitude, latitude: pinCoordinate.latitude)
+        savePin(longitude: pinCoordinate.longitude, latitude: pinCoordinate.latitude)
         DispatchQueue.main.async {
             self.mapView.addAnnotation(pin)
         }
     }
     
-    func addPin(longitude: Double, latitude: Double) {
-//        let pin = Pin(context: dataController.viewContext)
+    // Mark - Core Data funtions
+    func savePin(longitude: Double, latitude: Double) {
         let pin = Pin(context: viewContext)
-        pin.longitude = String(format: "%.4f", longitude)
-        pin.latitude = String(format: "%.4f", latitude)
-//        print("When adding pin latitude:\(String(describing: pin.latitude)) longitude\(String(describing: pin.longitude))")
-//        try? dataController.viewContext.save()
+        
+        pin.longitude = String(longitude)
+        pin.latitude = String(latitude)
+        
         do {
             try viewContext.save()
         }  catch {
-            print(error)
+            print("An error occured while saving the pin location: \(error.localizedDescription)")
         }
     }
     
-    func handleLocations(locations:[Pin]) {
+    func populateMap(locations:[Pin]) {
         
         var annotations = [MKPointAnnotation]()
         for location in locations {
@@ -89,7 +84,6 @@ class TravelLocationsMapViewController: UIViewController {
           
             let coordinate = CLLocationCoordinate2D(latitude: lat, longitude: long)
             let annotation = MKPointAnnotation()
-//            print("Retreiving pin latitude:\(lat) longitude\(long)")
             annotation.coordinate = coordinate
             annotations.append(annotation)
         }
@@ -98,39 +92,30 @@ class TravelLocationsMapViewController: UIViewController {
             self.mapView.addAnnotations(annotations)
         }
     }
-    
-    // -------------------------------------------------------------------------
-    // MARK: - Navigation
-
-//    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-//        // If this is a NotesListViewController, we'll configure its `Notebook`
-//        if let vc = segue.destination as? PhotoAlbumViewController {
-//            //vc.latitude = 0
-//            //vc.longitude = 0
-//        }
-//    }
 }
 
 extension TravelLocationsMapViewController: MKMapViewDelegate {
+    /*
+     
+     */
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView)
     {
-//        performSegue(withIdentifier: "photoAlbum", sender: nil)
-                
         let storyboard = UIStoryboard (name: "Main", bundle: nil)
         let photoAlbumVC = storyboard.instantiateViewController(withIdentifier: "PhotoAlbumViewController")as! PhotoAlbumViewController
     
         let latitude = view.annotation?.coordinate.latitude
         let longitude = view.annotation?.coordinate.longitude
         let fetchRequest:NSFetchRequest<Pin> = Pin.fetchRequest()
-        let latitudePredicate = NSPredicate(format: "latitude == %@", String(format: "%.4f", latitude!))
-        let longitudePredicate = NSPredicate(format: "longitude == %@", String(format: "%.4f", longitude!))
+//
+//        let latitudePredicate = NSPredicate(format: "latitude == %@", String(format: "%.4f", latitude!))
+//        let longitudePredicate = NSPredicate(format: "longitude == %@", String(format: "%.4f", longitude!))
+        
+        let latitudePredicate = NSPredicate(format: "latitude == %@", String(latitude!))
+        let longitudePredicate = NSPredicate(format: "longitude == %@", String(longitude!))
+        
         let andPredicate = NSCompoundPredicate(type: NSCompoundPredicate.LogicalType.and, subpredicates: [latitudePredicate, longitudePredicate])
-        
-//        let predicate = NSPredicate(format:"latitude == 42.09950565499281 AND longitude == -88.26213018226036")
-
-        
+                
         fetchRequest.predicate = andPredicate
-//        fetchRequest.predicate = predicate
         
         if let result = try? viewContext.fetch(fetchRequest){
 //            print("Lat: \(String(describing: latitude)) Lon: \(String(describing: longitude))")
@@ -140,14 +125,16 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
             print("I cannot find the pin")
         }
         // Communicate the match
-        photoAlbumVC.latitude = view.annotation?.coordinate.latitude
-        photoAlbumVC.longitude = view.annotation?.coordinate.longitude
+//        photoAlbumVC.latitude = view.annotation?.coordinate.latitude
+//        photoAlbumVC.longitude = view.annotation?.coordinate.longitude
+        
         self.navigationController?.pushViewController(photoAlbumVC, animated: true)
     }
     
-
+    /*
+     Save the map location whenever the user changes it.
+     */
     func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-        print("regionDidChangeAnimated")
         let region = mapView.region
         let center = region.center
         let latitude = center.latitude
@@ -164,6 +151,4 @@ extension TravelLocationsMapViewController: MKMapViewDelegate {
         UserDefaults.standard.set(longitudeDelta, forKey: "locationsaved")
         print(latitude, longitude, latitudeDelta, longitudeDelta)
     }
-    
-
 }

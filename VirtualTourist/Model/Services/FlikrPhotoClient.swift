@@ -59,35 +59,35 @@ class FlikrPhotoClient {
 //        }
 //    }
 
-     class func getPhotos(photoData: [FlickrPhotoData]) -> [FlickrPhoto] {
-      let photos: [FlickrPhoto] = photoData.compactMap { photoObject in
-        guard
-            let photoID = photoObject.id as String?,
-            let farm = photoObject.farm as Int?,
-            let server = photoObject.server as String?,
-            let secret = photoObject.secret as String?
-        else {
-          return nil
-        }
-
-        var flickrPhoto = FlickrPhoto(photoID: photoID, farm: farm, server: server, secret: secret)
-
-        guard
-          let url = flickrPhoto.flickrImageURL(),
-          let imageData = try? Data(contentsOf: url as URL)
-        else {
-          return nil
-        }
-
-        if let image = UIImage(data: imageData) {
-          flickrPhoto.thumbnail = image
-          return flickrPhoto
-        } else {
-          return nil
-        }
-      }
-      return photos
-    }
+//     class func getPhotos(photoData: [FlickrPhotoData]) -> [FlickrPhoto] {
+//      let photos: [FlickrPhoto] = photoData.compactMap { photoObject in
+//        guard
+//            let photoID = photoObject.id as String?,
+//            let farm = photoObject.farm as Int?,
+//            let server = photoObject.server as String?,
+//            let secret = photoObject.secret as String?
+//        else {
+//          return nil
+//        }
+//
+//        var flickrPhoto = FlickrPhoto(photoID: photoID, farm: farm, server: server, secret: secret)
+//
+//        guard
+//          let url = flickrPhoto.flickrImageURL(),
+//          let imageData = try? Data(contentsOf: url as URL)
+//        else {
+//          return nil
+//        }
+//
+//        if let image = UIImage(data: imageData) {
+//          flickrPhoto.thumbnail = image
+//          return flickrPhoto
+//        } else {
+//          return nil
+//        }
+//      }
+//      return photos
+//    }
     
  
     ///

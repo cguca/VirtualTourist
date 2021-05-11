@@ -17,14 +17,7 @@ struct FlickrPhoto  {
     let server: String
     let secret: String
     
-//    enum CodingKeys: String, CodingKey {
-//        case thumbnail
-//        case largeImage
-//        case photoID
-//        case farm
-//        case server
-//        case secret
-//    }
+
     init (photoID: String, farm: Int, server: String, secret: String) {
       self.photoID = photoID
       self.farm = farm

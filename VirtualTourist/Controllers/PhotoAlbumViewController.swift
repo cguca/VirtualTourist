@@ -24,7 +24,7 @@ class PhotoAlbumViewController: UIViewController {
     
     var pin:Pin!
     var latitude:Double!
-    var longitude:Double! 
+    var longitude:Double!
     let latitudeDelta = 1.0
     let longitudeDelta = 1.0
     var page:Int = 0
@@ -36,6 +36,10 @@ class PhotoAlbumViewController: UIViewController {
         super.viewDidLoad()
         messageLabel.isHidden = true
         newCollectionButton.isEnabled = false
+        
+        latitude = CLLocationDegrees(pin.latitude!)
+        longitude = CLLocationDegrees(pin.longitude!)
+        
         collectionView.delegate = self
         collectionView.dataSource = self
         
@@ -46,7 +50,10 @@ class PhotoAlbumViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-
+        
+//        latitude = CLLocationDegrees(pin.latitude!)
+//        longitude = CLLocationDegrees(pin.longitude!)
+        
         getPhotos()
 
         getLocation()
@@ -60,7 +67,7 @@ class PhotoAlbumViewController: UIViewController {
         
         let lat = CLLocationDegrees(latitude)
         let long = CLLocationDegrees(longitude)
-        
+    
         let coordinate = CLLocationCoordinate2D(latitude: lat, longitude: long)
         let region = MKCoordinateRegion(center: coordinate, span: span)
         
@@ -189,11 +196,14 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
         
         let flickrPhoto = self.images[(indexPath as NSIndexPath).row]
         
+        //*** move this after the call
         let image = flickrPhoto.thumbnail!
         cell.imageView.image = image
         cell.photoID = flickrPhoto.photoID
         
         if let url = flickrPhoto.flickrImageURL() {
+            print("Here's the url: \(url)")
+            // ***** pass the entire flickrPhoto object
             loadImage(photoID: flickrPhoto.photoID, url: url) { (image) -> Void in
 //                self.saveNewImage(image: image)
                 cell.imageView.image = image
@@ -222,6 +232,7 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
                 // always in the main queue, just in case!
                 
                 DispatchQueue.main.async(execute: { () -> Void in
+                    //**** pass entire flickrPhoto
                     self.saveNewImage(photoID: photoID, imageData: imgData)
                     handler(img)
                 })
