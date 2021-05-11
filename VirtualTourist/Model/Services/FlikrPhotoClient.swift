@@ -102,8 +102,8 @@ class FlikrPhotoClient {
          return nil
        }
 
-       var flickrPhoto = FlickrPhoto(photoID: photoID, farm: farm, server: server, secret: secret)
-        flickrPhoto.thumbnail = UIImage(named: "placeholder")
+        let flickrPhoto = FlickrPhoto(photoID: photoID, farm: farm, server: server, secret: secret)
+//        flickrPhoto.thumbnail = UIImage(named: "placeholder")
         return flickrPhoto
      }
      return photos

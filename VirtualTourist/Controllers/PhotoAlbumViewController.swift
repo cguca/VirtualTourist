@@ -109,7 +109,7 @@ class PhotoAlbumViewController: UIViewController {
             // Instead of pass just data, pass whole data
             handleGetPhotosResponse(photos: FlikrPhotoClient.getPhotos2(photoData: response.photo), error: error)
         } else {
-            print("There is an error")
+            print("There is an error getting the flickr location handler \(error)")
         }
     }
     
@@ -197,18 +197,36 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
         let flickrPhoto = self.images[(indexPath as NSIndexPath).row]
         
         //*** move this after the call
-        let image = flickrPhoto.thumbnail!
-        cell.imageView.image = image
-        cell.photoID = flickrPhoto.photoID
+//        let image = flickrPhoto.thumbnail!
+//        cell.imageView.image = image
+//        cell.photoID = flickrPhoto.photoID
         
-        if let url = flickrPhoto.flickrImageURL() {
-            print("Here's the url: \(url)")
-            // ***** pass the entire flickrPhoto object
-            loadImage(photoID: flickrPhoto.photoID, url: url) { (image) -> Void in
-//                self.saveNewImage(image: image)
-                cell.imageView.image = image
+//        if let url = flickrPhoto.flickrImageURL() {
+//            print("Here's the url: \(url)")
+//            // ***** pass the entire flickrPhoto object
+//            loadImage(photoID: flickrPhoto.photoID, url: url) { (image) -> Void in
+////                self.saveNewImage(image: image)
+//                cell.imageView.image = image
+//            }
+//        }
+        
+//        cell.imageView.image = UIImage(named: "placeholder")
+        if let image = flickrPhoto.thumbnail {
+            cell.imageView.image = image
+        } else {
+            cell.imageView.image = UIImage(named: "placeholder")
+            if let url = flickrPhoto.flickrImageURL() {
+                print("Here's the url: \(url)")
+                // ***** pass the entire flickrPhoto object
+                loadImage(photoID: flickrPhoto.photoID, url: url) { (image) -> Void in
+    //                self.saveNewImage(image: image)
+                    cell.imageView.image = image
+                }
             }
         }
+//        cell.imageView.image = flickrPhoto.thumbnail
+        
+        cell.photoID = flickrPhoto.photoID
         
         if (indexPath.row == images.count - 1 ) { //it's your last cell
             newCollectionButton.isEnabled = true
